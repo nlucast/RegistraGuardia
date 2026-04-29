@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Guardias Médicas</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Guardias" />
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f3f4f6;min-height:100vh}
+    #app{max-width:448px;margin:0 auto;min-height:100vh;position:relative}
+
+    /* Header */
+    .header{position:fixed;top:0;left:0;right:0;max-width:448px;margin:0 auto;background:#2563EB;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+    .header h1{font-size:1.1rem;font-weight:700;line-height:1}
+    .header p{font-size:.7rem;color:#bfdbfe;margin-top:2px}
+
+    /* Nav */
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;max-width:448px;margin:0 auto;background:#fff;border-top:1px solid #e5e7eb;display:flex;z-index:20;box-shadow:0 -2px 8px rgba(0,0,0,.07)}
+    .nav-btn{flex:1;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:.6rem;font-weight:700}
+    .nav-btn.active{color:#2563EB}
+    .nav-btn span.icon{font-size:1.3rem;line-height:1}
+
+    /* Content */
+    .content{padding-top:68px;padding-bottom:64px}
+    .section{display:none;padding:16px;flex-direction:column;gap:12px}
+    .section.active{display:flex}
+
+    /* Cards */
+    .card{background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
+    .card-bar{height:6px}
+    .card-body{padding:16px}
+    .card-row{display:flex;align-items:center;gap:10px}
+
+    /* Buttons */
+    .btn{display:block;width:100%;padding:12px;border-radius:16px;font-size:.85rem;font-weight:700;border:none;cursor:pointer;text-align:center;transition:opacity .15s}
+    .btn:active{opacity:.75}
+    .btn-primary{background:#2563EB;color:#fff}
+    .btn-secondary{background:#f3f4f6;color:#6b7280}
+    .btn-success{background:#059669;color:#fff}
+    .btn-toggle{padding:8px;border-radius:10px;font-size:.75rem;font-weight:700;border:2px solid #e5e7eb;cursor:pointer;background:#fff;color:#6b7280;transition:all .15s}
+    .btn-toggle.active{background:#2563EB;color:#fff;border-color:#2563EB}
+    .btn-toggle.active-green{background:#059669;color:#fff;border-color:#059669}
+
+    /* Form */
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-label{font-size:.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em}
+    .form-input{border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:.875rem;background:#fff;outline:none;width:100%;font-family:inherit}
+    .form-input:focus{border-color:#2563EB}
+    input[type="time"]::-webkit-datetime-edit-ampm-field{display:none}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    .grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+
+    /* Month nav */
+    .month-nav{background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;padding:4px 8px}
+    .month-nav button{width:40px;height:40px;border:none;background:none;color:#2563EB;font-size:1.5rem;cursor:pointer;border-radius:10px}
+    .month-nav button:active{background:#eff6ff}
+    .month-nav span{font-size:.85rem;font-weight:700;color:#374151;text-transform:capitalize}
+
+    /* Badges */
+    .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;white-space:nowrap}
+    .badge-blue{background:#dbeafe;color:#1d4ed8}
+    .badge-gray{background:#f3f4f6;color:#6b7280}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-yellow{background:#fef3c7;color:#92400e}
+    .badge-amber{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+
+    /* Totals */
+    .total-card{background:linear-gradient(135deg,#2563EB,#1d4ed8);color:#fff;border-radius:16px;padding:16px}
+    .total-card h3{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#bfdbfe;margin-bottom:12px}
+    .total-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px}
+    .total-item .val{font-size:1.8rem;font-weight:700;line-height:1}
+    .total-item .lbl{font-size:.65rem;color:#bfdbfe;margin-top:4px}
+    .total-item.ml{margin-left:auto;text-align:right}
+    .total-val-yellow{color:#fde68a}
+
+    /* Colors for establishments */
+    .color-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+    .color-swatch{width:36px;height:36px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform .15s}
+    .color-swatch.selected{border-color:#111;transform:scale(1.15)}
+
+    /* Alert box */
+    .alert{padding:12px;border-radius:10px;font-size:.8rem;display:flex;align-items:flex-start;gap:8px}
+    .alert-orange{background:#fff7ed;border:1px solid #fed7aa;color:#c2410c}
+    .alert-amber{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+    .alert-green{background:#ecfdf5;color:#065f46;font-weight:600;text-align:center;border-radius:8px;padding:8px}
+
+    /* Checkbox */
+    .checkbox-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer}
+    .checkbox-row input{width:18px;height:18px;accent-color:#f59e0b;cursor:pointer}
+    .checkbox-row span{font-size:.875rem;font-weight:500}
+
+    /* Modal */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;align-items:flex-end;justify-content:center;max-width:448px;margin:0 auto}
+    .modal-overlay.open{display:flex}
+    .modal{background:#fff;border-radius:24px 24px 0 0;width:100%;max-height:92vh;display:flex;flex-direction:column}
+    .modal-header{padding:16px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;border-radius:24px 24px 0 0}
+    .modal-header h2{font-size:1rem;font-weight:700;color:#111}
+    .modal-close{background:none;border:none;font-size:1.5rem;color:#9ca3af;cursor:pointer;line-height:1}
+    .modal-body{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+
+    /* Summary breakdown */
+    .breakdown{display:flex;gap:8px;flex-wrap:wrap}
+    .breakdown-item{flex:1;min-width:60px;background:#eff6ff;border-radius:10px;padding:8px;text-align:center}
+    .breakdown-item .pt{font-size:.7rem;font-weight:700;color:#2563EB}
+    .breakdown-item .cnt{font-size:1.5rem;font-weight:700;color:#111;line-height:1;margin-top:2px}
+
+    /* Help */
+    .help-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    .help-bar{height:6px}
+    .help-body{padding:16px;display:flex;flex-direction:column;gap:8px}
+    .help-body h3{font-size:.95rem;font-weight:700;color:#111;display:flex;align-items:center;gap:8px}
+    .help-body p,.help-body li{font-size:.82rem;color:#4b5563;line-height:1.5}
+    .help-body ol,.help-body ul{padding-left:18px;display:flex;flex-direction:column;gap:4px}
+    .help-inner{background:#f9fafb;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+    .help-inner-title{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af}
+
+    /* Empty state */
+    .empty{text-align:center;padding:48px 16px;color:#d1d5db}
+    .empty .ico{font-size:3rem;margin-bottom:8px}
+    .empty p{font-size:.85rem;color:#9ca3af}
+
+    /* Shift card actions */
+    .shift-actions{display:flex;flex-direction:column;gap:4px;align-self:flex-start;flex-shrink:0}
+    .icon-btn{background:none;border:none;cursor:pointer;font-size:1.1rem;line-height:1;color:#d1d5db;padding:2px}
+    .icon-btn:hover{color:#2563EB}
+    .icon-btn.del:hover{color:#f87171}
+  </style>
+</head>
+<body>
+<div id="js-error-box" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#ef4444;color:#fff;padding:12px;font-size:.8rem;word-break:break-all"></div>
+<div id="app">
+
+  <header class="header">
+    <div>
+      <h1>Guardias Médicas</h1>
+      <p id="tab-label">Guardias</p>
+    </div>
+    <span style="font-size:1.8rem">🏥</span>
+  </header>
+
+  <main class="content">
+
+    <!-- ═══ GUARDIAS ═══ -->
+    <section id="tab-shifts" class="section active">
+      <div class="month-nav">
+        <button onclick="changeMonth('filter',-1)">‹</button>
+        <span id="filter-label"></span>
+        <button onclick="changeMonth('filter',+1)">›</button>
+      </div>
+      <button class="btn btn-primary" id="btn-new-shift" onclick="toggleShiftForm()">＋ Nueva Guardia</button>
+      <div id="shift-form-container"></div>
+      <div id="empty-shifts" class="empty" style="display:none">
+        <div class="ico">📋</div>
+        <p id="empty-shifts-txt"></p>
+      </div>
+      <div id="shifts-list"></div>
+      <div id="month-total"></div>
+    </section>
+
+    <!-- ═══ LUGARES ═══ -->
+    <section id="tab-establishments" class="section">
+      <button class="btn btn-primary" id="btn-new-est" onclick="toggleEstForm()">＋ Nuevo Lugar</button>
+      <div id="est-form-container"></div>
+      <div id="empty-est" class="empty" style="display:none">
+        <div class="ico">🏥</div>
+        <p>Agregá los lugares donde trabajás</p>
+      </div>
+      <div id="est-list"></div>
+    </section>
+
+    <!-- ═══ RESUMEN ═══ -->
+    <section id="tab-summary" class="section">
+      <div class="month-nav">
+        <button onclick="changeMonth('summary',-1)">‹</button>
+        <span id="summary-label"></span>
+        <button onclick="changeMonth('summary',+1)">›</button>
+      </div>
+      <div id="empty-summary" class="empty" style="display:none">
+        <div class="ico">📊</div>
+        <p id="empty-summary-txt"></p>
+      </div>
+      <div id="summary-cards"></div>
+      <div id="summary-total"></div>
+      <div id="export-btn-container"></div>
+    </section>
+
+    <!-- ═══ AYUDA ═══ -->
+    <section id="tab-help" class="section">
+      <div class="total-card">
+        <h3 style="margin-bottom:4px;font-size:1rem;color:#fff;text-transform:none;letter-spacing:0">Instructivo de uso</h3>
+        <p style="font-size:.75rem;color:#bfdbfe">Guardias Médicas — Control de turnos por establecimiento</p>
+      </div>
+
+      <div class="help-card"><div class="help-bar" style="background:#3b82f6"></div><div class="help-body">
+        <h3>🏥 Paso 1 — Agregar lugares</h3>
+        <p>Antes de registrar guardias, ingresá los establecimientos donde trabajás.</p>
+        <ol><li>Tocá la pestaña <strong>Lugares</strong></li><li>Tocá <strong>＋ Nuevo Lugar</strong></li><li>Escribí el nombre y elegí un color</li><li>Tocá <strong>Guardar</strong></li></ol>
+      </div></div>
+
+      <div class="help-card"><div class="help-bar" style="background:#10b981"></div><div class="help-body">
+        <h3>📋 Paso 2 — Registrar guardias</h3>
+        <p>En <strong>Guardias</strong> tocá <strong>＋ Nueva Guardia</strong> y completá el formulario.</p>
+        <div class="help-inner">
+        <div class="help-inner">
+          <div class="help-inner-title">Modalidades</div>
+          <p><strong>Completa</strong> — Cantidad fija de horas (ej: 12h, 24h).</p>
+          <p><strong>Por horas</strong> — Hora inicio y hora fin. Si termina al día siguiente, marcá el checkbox.</p>
+          <p><strong>Mensual</strong> — Para guardias cobradas por mes fijo, sin horas específicas.</p>
+        </div>
+        <div class="help-inner">
+          <div class="help-inner-title">Tarifa (opcional)</div>
+          <p><strong>$ por Guardia</strong> — Valor fijo por guardia. <strong>$ por Hora</strong> — Se multiplica por horas trabajadas.</p>
+        </div>
+      </div></div>
+
+      <div class="help-card"><div class="help-bar" style="background:#8b5cf6"></div><div class="help-body">
+        <h3>📊 Paso 3 — Resumen</h3>
+        <p>En <strong>Resumen</strong> navegás entre meses con las flechas. Cada tarjeta muestra un establecimiento con horas, guardias y monto. Al final aparece el botón para <strong>Exportar a Excel</strong>.</p>
+      </div></div>
+
+      <div class="help-card"><div class="help-bar" style="background:#f59e0b"></div><div class="help-body">
+        <h3>💾 Almacenamiento</h3>
+        <p>Los datos se guardan <strong>solo en este dispositivo</strong>, en el navegador. No se envía nada a internet.</p>
+        <div class="alert alert-amber">⚠️ Si borrás datos del navegador, se pierden. Exportá a Excel periódicamente como respaldo.</div>
+      </div></div>
+
+      <div class="help-card"><div class="help-bar" style="background:#3b82f6"></div><div class="help-body">
+        <h3>📱 Instalar en celular</h3>
+        <div class="help-inner"><div class="help-inner-title">Android (Chrome)</div><p>Menú ⋮ → <strong>"Instalar app"</strong> o <strong>"Agregar a pantalla de inicio"</strong></p></div>
+        <div class="help-inner"><div class="help-inner-title">iPhone (Safari)</div><p>Botón compartir ↑ → <strong>"Agregar a inicio"</strong></p></div>
+      </div></div>
+    </section>
+
+  </main>
+
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+
+  <!-- Modal editar -->
+  <div class="modal-overlay" id="edit-modal" onclick="handleModalClick(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="edit-modal-title">Editar Guardia</h2>
+        <button class="modal-close" onclick="closeEditModal()">×</button>
+      </div>
+      <div class="modal-body" id="edit-modal-body"></div>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<script src="xlsx.min.js"></script>
+<script>
+window.onerror = function(msg, src, line, col) {
+  var d = document.getElementById('js-error-box');
+  if (d) { d.style.display='block'; d.textContent = 'ERROR JS: '+msg+' (línea '+line+')'; }
+  return false;
+};
+
+// ══════════════════════════════════════════
+//  POLYFILLS (compatibilidad Android/iOS antiguos)
+// ══════════════════════════════════════════
+if (!Array.prototype.find) {
+  Array.prototype.find = function(fn) {
+    for (var i=0;i<this.length;i++) { if (fn(this[i],i,this)) return this[i]; }
+  };
+}
+if (!Array.prototype.findIndex) {
+  Array.prototype.findIndex = function(fn) {
+    for (var i=0;i<this.length;i++) { if (fn(this[i],i,this)) return i; }
+    return -1;
+  };
+}
+if (!String.prototype.padStart) {
+  String.prototype.padStart = function(len, ch) {
+    var s = String(this); ch = ch||' ';
+    while (s.length < len) s = ch + s;
+    return s;
+  };
+}
+
+// ══════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════
+var MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+var COLORS = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316'];
+var TABS = [
+  {id:'shifts',       label:'Guardias', icon:'📋'},
+  {id:'establishments',label:'Lugares', icon:'🏥'},
+  {id:'summary',      label:'Resumen',  icon:'📊'},
+  {id:'help',         label:'Ayuda',    icon:'❓'}
+];
+
+var now = new Date();
+var state = {
+  establishments: safeJSON('gm_est',    []),
+  shifts:         safeJSON('gm_shifts', []),
+  activeTab: 'shifts',
+  filterMonth:  now.getMonth()+1, filterYear:  now.getFullYear(),
+  summaryMonth: now.getMonth()+1, summaryYear: now.getFullYear(),
+  showShiftForm: false,
+  showEstForm:   false,
+  editingId: null,
+  form: defaultForm(),
+  editForm: defaultForm()
+};
+
+function safeJSON(key, def) {
+  try { return JSON.parse(localStorage.getItem(key)) || def; } catch(e) { return def; }
+}
+function save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function defaultForm() {
+  var d = new Date(), ds = d.toISOString().slice(0,10), ms = ds.slice(0,7);
+  return { establishmentId:'', date:ds, monthValue:ms,
+           shiftType:'completa', startTime:'08:00', endTime:'20:00',
+           nextDay:false, shiftHours:12, tarifaTipo:'guardia', tarifaValor:0, notes:'' };
+}
+
+// ══════════════════════════════════════════
+//  CÁLCULOS
+// ══════════════════════════════════════════
+function calcHours(s) {
+  if (s.shiftType === 'horas') {
+    var sp = s.startTime.split(':'), ep = s.endTime.split(':');
+    var sm = +sp[0]*60 + +sp[1], em = +ep[0]*60 + +ep[1];
+    if (s.nextDay) em += 1440;
+    return Math.max(0, (em - sm) / 60);
+  }
+  if (s.shiftType === 'completa') return +s.shiftHours || 0;
+  return 0;
+}
+function calcValue(s) {
+  var v = +s.tarifaValor || 0; if (!v) return 0;
+  return (s.tarifaTipo||'guardia') === 'hora' ? calcHours(s)*v : v;
+}
+function fmtHours(h) {
+  var hh = Math.floor(h), mm = Math.round((h%1)*60);
+  return mm ? hh+'h '+String(mm).padStart(2,'0')+'m' : hh+'h';
+}
+function fmtCurrency(v) { return '$ '+Math.round(v).toLocaleString('es-AR'); }
+function fmtDate(d) { var p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function monthLbl(m,y) { return MONTHS[m-1]+' '+y; }
+function shiftTypeLbl(t) { return {completa:'Guardia completa',horas:'Por horas',mensual:'Mensual'}[t]||t; }
+function shiftSummary(s) { return s.shiftType==='mensual' ? 'Mensual' : fmtHours(calcHours(s)); }
+function getEstColor(id) { var e=state.establishments.find(function(e){return e.id===id;}); return e?e.color:'#9ca3af'; }
+function inMonth(s, m, y) { var d=new Date(s.date+'T12:00:00'); return d.getMonth()+1===m && d.getFullYear()===y; }
+function previewHours(f) {
+  if (f.shiftType!=='horas') return 0;
+  var sp=f.startTime.split(':'), ep=f.endTime.split(':');
+  var sm=+sp[0]*60+(+sp[1]), em=+ep[0]*60+(+ep[1]);
+  if (f.nextDay) em+=1440;
+  return Math.max(0,(em-sm)/60);
+}
+
+// ══════════════════════════════════════════
+//  RENDER — NAV
+// ══════════════════════════════════════════
+function renderNav() {
+  var html = '';
+  TABS.forEach(function(t) {
+    var active = t.id===state.activeTab ? ' active' : '';
+    html += '<button class="nav-btn'+active+'" onclick="switchTab(\''+t.id+'\')">'+
+            '<span class="icon">'+t.icon+'</span><span>'+t.label+'</span></button>';
+  });
+  document.getElementById('bottom-nav').innerHTML = html;
+  var lbl = TABS.find(function(t){return t.id===state.activeTab;});
+  document.getElementById('tab-label').textContent = lbl ? lbl.label : '';
+}
+
+function switchTab(id) {
+  state.activeTab = id;
+  TABS.forEach(function(t) {
+    var el = document.getElementById('tab-'+t.id);
+    if (el) el.className = 'section' + (t.id===id ? ' active' : '');
+  });
+  renderNav();
+}
+
+// ══════════════════════════════════════════
+//  RENDER — MONTH LABELS
+// ══════════════════════════════════════════
+function renderLabels() {
+  document.getElementById('filter-label').textContent = monthLbl(state.filterMonth, state.filterYear);
+  document.getElementById('summary-label').textContent = monthLbl(state.summaryMonth, state.summaryYear);
+}
+
+function changeMonth(target, dir) {
+  if (target==='filter') {
+    state.filterMonth += dir;
+    if (state.filterMonth<1) { state.filterMonth=12; state.filterYear--; }
+    if (state.filterMonth>12){ state.filterMonth=1;  state.filterYear++; }
+  } else {
+    state.summaryMonth += dir;
+    if (state.summaryMonth<1) { state.summaryMonth=12; state.summaryYear--; }
+    if (state.summaryMonth>12){ state.summaryMonth=1;  state.summaryYear++; }
+  }
+  renderLabels();
+  renderShifts();
+  renderSummary();
+}
+
+// ══════════════════════════════════════════
+//  RENDER — FORMULARIO NUEVA GUARDIA
+// ══════════════════════════════════════════
+function toggleShiftForm() {
+  state.showShiftForm = !state.showShiftForm;
+  if (state.showShiftForm) {
+    state.form = defaultForm();
+    if (state.establishments.length) state.form.establishmentId = state.establishments[0].id;
+  }
+  document.getElementById('btn-new-shift').textContent = state.showShiftForm ? '✕ Cancelar' : '＋ Nueva Guardia';
+  document.getElementById('btn-new-shift').className = 'btn '+(state.showShiftForm?'btn-secondary':'btn-primary');
+  renderShiftForm();
+}
+
+function renderShiftForm() {
+  var c = document.getElementById('shift-form-container');
+  if (!state.showShiftForm) { c.innerHTML=''; return; }
+  c.innerHTML = shiftFormHTML(state.form, 'save');
+}
+
+function shiftFormHTML(f, action) {
+  var estOpts = state.establishments.length
+    ? state.establishments.map(function(e){
+        return '<option value="'+e.id+'"'+(f.establishmentId===e.id?' selected':'')+'>'+e.name+'</option>';
+      }).join('')
+    : '';
+  var noEst = !state.establishments.length
+    ? '<div class="alert alert-orange">⚠️ Primero agregá un lugar en la pestaña <strong>"Lugares"</strong></div>'
+    : '<select class="form-input" onchange="formSet(\'establishmentId\',this.value,\''+action+'\')" id="'+action+'-est">'+estOpts+'</select>';
+
+  var sBtns = [{v:'completa',l:'Completa'},{v:'horas',l:'Por horas'},{v:'mensual',l:'Mensual'}].map(function(st){
+    return '<button type="button" class="btn-toggle'+(f.shiftType===st.v?' active':'')+'" onclick="formSet(\'shiftType\',\''+st.v+'\',\''+action+'\')">'+st.l+'</button>';
+  }).join('');
+
+  var dateField = '';
+  if (f.shiftType==='mensual') {
+    dateField = '<div class="form-group"><label class="form-label">Mes</label>'+
+      '<input class="form-input" type="month" value="'+f.monthValue+'" onchange="formSet(\'monthValue\',this.value,\''+action+'\')"></div>';
+  } else {
+    dateField = '<div class="form-group"><label class="form-label">Fecha de inicio</label>'+
+      '<input class="form-input" type="date" value="'+f.date+'" onchange="formSet(\'date\',this.value,\''+action+'\')"></div>';
+  }
+
+  var durationField = '';
+  if (f.shiftType==='completa') {
+    durationField = '<div class="form-group"><label class="form-label">Duración (horas)</label>'+
+      '<input class="form-input" type="number" min="0.5" max="48" step="0.5" value="'+f.shiftHours+'" onchange="formSet(\'shiftHours\',this.value,\''+action+'\')"></div>';
+  } else if (f.shiftType==='horas') {
+    var ph = previewHours(f);
+    var chk = f.nextDay ? ' checked' : '';
+    durationField = '<div class="form-group">'+
+      '<label class="form-label">Horario</label>'+
+      '<div class="grid-2">'+
+      '<div><label class="form-label">Desde</label><input class="form-input" type="time" value="'+f.startTime+'" onchange="formSet(\'startTime\',this.value,\''+action+'\')"></div>'+
+      '<div><label class="form-label">Hasta</label><input class="form-input" type="time" value="'+f.endTime+'" onchange="formSet(\'endTime\',this.value,\''+action+'\')"></div>'+
+      '</div>'+
+      '<label class="checkbox-row alert-amber" style="border-radius:10px;cursor:pointer">'+
+      '<input type="checkbox"'+chk+' onchange="formSet(\'nextDay\',this.checked,\''+action+'\')">'+
+      '<span>Termina el día siguiente</span></label>'+
+      (ph>0 ? '<div class="alert-green">Duración: '+fmtHours(ph)+'</div>' : '')+
+      '</div>';
+  }
+
+  var tBtns = ['guardia','hora'].map(function(tp){
+    var lbl = tp==='guardia' ? '$ por Guardia' : '$ por Hora';
+    return '<button type="button" class="btn-toggle'+(f.tarifaTipo===tp?' active-green active':'')+'" onclick="formSet(\'tarifaTipo\',\''+tp+'\',\''+action+'\')">'+lbl+'</button>';
+  }).join('');
+
+  var previewVal = '';
+  if (+f.tarifaValor>0 && f.shiftType==='horas' && f.tarifaTipo==='hora' && previewHours(f)>0) {
+    previewVal = '<div class="alert-green">Total estimado: '+fmtCurrency(previewHours(f)*(+f.tarifaValor))+'</div>';
+  }
+
+  var submitLbl = action==='save' ? 'Guardar Guardia' : 'Guardar cambios';
+  var submitFn  = action==='save' ? 'addShift()' : 'saveEdit()';
+
+  return '<div class="card"><div class="card-body" style="display:flex;flex-direction:column;gap:16px">'+
+    '<div class="form-group"><label class="form-label">Establecimiento</label>'+noEst+'</div>'+
+    '<div class="form-group"><label class="form-label">Modalidad</label><div class="grid-3">'+sBtns+'</div></div>'+
+    dateField+durationField+
+    '<div class="form-group"><label class="form-label">Tarifa <span style="font-weight:400;color:#d1d5db">(opcional)</span></label>'+
+    '<div class="grid-2">'+tBtns+'</div>'+
+    '<div style="position:relative">'+
+    '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af;font-weight:700">$</span>'+
+    '<input class="form-input" type="number" min="0" step="1" placeholder="0" value="'+(+f.tarifaValor||'')+'" style="padding-left:28px" onchange="formSet(\'tarifaValor\',this.value,\''+action+'\')">'+
+    '</div>'+previewVal+'</div>'+
+    '<div class="form-group"><label class="form-label">Notas <span style="font-weight:400;color:#d1d5db">(opcional)</span></label>'+
+    '<input class="form-input" type="text" placeholder="..." value="'+escHtml(f.notes)+'" onchange="formSet(\'notes\',this.value,\''+action+'\')"></div>'+
+    '<button class="btn btn-primary" onclick="'+submitFn+'">'+submitLbl+'</button>'+
+    '</div></div>';
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+
+function formSet(key, val, action) {
+  var f = action==='save' ? state.form : state.editForm;
+  if (key==='nextDay') f[key] = !!val;
+  else if (key==='shiftHours'||key==='tarifaValor') f[key] = parseFloat(val)||0;
+  else f[key] = val;
+  if (action==='save') renderShiftForm();
+  else renderEditModal();
+}
+
+// ══════════════════════════════════════════
+//  RENDER — LISTA DE GUARDIAS
+// ══════════════════════════════════════════
+function renderShifts() {
+  var filtered = state.shifts.filter(function(s){ return inMonth(s,state.filterMonth,state.filterYear); })
+    .sort(function(a,b){ return b.date.localeCompare(a.date); });
+
+  var listEl  = document.getElementById('shifts-list');
+  var emptyEl = document.getElementById('empty-shifts');
+  var totalEl = document.getElementById('month-total');
+
+  document.getElementById('empty-shifts-txt').textContent = 'Sin guardias en '+monthLbl(state.filterMonth,state.filterYear);
+
+  if (!filtered.length) {
+    emptyEl.style.display = 'block';
+    listEl.innerHTML = '';
+    totalEl.innerHTML = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  listEl.innerHTML = filtered.map(function(s) {
+    var color = getEstColor(s.establishmentId);
+    var v = calcValue(s);
+    var timeInfo = s.shiftType==='horas'
+      ? ' · '+s.startTime+' – '+s.endTime+(s.nextDay?' <span class="badge badge-amber">+1 día</span>':'')
+      : '';
+    return '<div class="card" style="margin-bottom:4px">'+
+      '<div class="card-bar" style="background:'+color+'"></div>'+
+      '<div class="card-body card-row">'+
+      '<div style="flex:1;min-width:0">'+
+      '<div style="font-weight:700;font-size:.875rem;color:#111;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.establishmentName+'</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">'+
+      '<span class="badge badge-gray">'+shiftTypeLbl(s.shiftType)+'</span>'+
+      '<span class="badge badge-green">'+shiftSummary(s)+'</span>'+
+      (v>0?'<span class="badge badge-yellow">'+fmtCurrency(v)+'</span>':'')+
+      '</div>'+
+      '<div style="font-size:.72rem;color:#9ca3af">'+fmtDate(s.date)+timeInfo+'</div>'+
+      (s.notes?'<div style="font-size:.72rem;color:#9ca3af;margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.notes+'</div>':'')+
+      '</div>'+
+      '<div class="shift-actions">'+
+      '<button class="icon-btn" onclick="openEditModal(\''+s.id+'\')">✏️</button>'+
+      '<button class="icon-btn del" onclick="removeShift(\''+s.id+'\')">×</button>'+
+      '</div></div></div>';
+  }).join('');
+
+  // Totales del mes
+  var hours   = filtered.reduce(function(a,s){return a+calcHours(s);},0);
+  var mensual = filtered.filter(function(s){return s.shiftType==='mensual';}).length;
+  var value   = filtered.reduce(function(a,s){return a+calcValue(s);},0);
+  var items = '';
+  if (hours>0) items += '<div class="total-item"><div class="val">'+fmtHours(hours)+'</div><div class="lbl">horas</div></div>';
+  if (mensual>0) items += '<div class="total-item"><div class="val">'+mensual+'</div><div class="lbl">mensual'+(mensual>1?'es':'')+'</div></div>';
+  if (value>0) items += '<div class="total-item"><div class="val total-val-yellow">'+fmtCurrency(value)+'</div><div class="lbl">liquidado</div></div>';
+  items += '<div class="total-item ml"><div class="val">'+filtered.length+'</div><div class="lbl">guardia'+(filtered.length!==1?'s':'')+'</div></div>';
+  totalEl.innerHTML = '<div class="total-card"><h3>Total del mes</h3><div class="total-row">'+items+'</div></div>';
+}
+
+function removeShift(id) {
+  if (!confirm('¿Eliminar esta guardia?')) return;
+  state.shifts = state.shifts.filter(function(s){return s.id!==id;});
+  save('gm_shifts', state.shifts);
+  renderShifts();
+  renderSummary();
+}
+
+function addShift() {
+  var f = state.form;
+  var est = state.establishments.find(function(e){return e.id===f.establishmentId;});
+  if (!est) { alert('Seleccioná un establecimiento'); return; }
+  if (f.shiftType==='horas' && !f.nextDay) {
+    var sp=f.startTime.split(':'), ep=f.endTime.split(':');
+    if ((+ep[0]*60+(+ep[1])) <= (+sp[0]*60+(+sp[1]))) {
+      alert('La hora de fin debe ser mayor a la de inicio, o marcá "Termina el día siguiente".'); return;
+    }
+  }
+  if (f.shiftType==='completa' && !(+f.shiftHours>0)) { alert('Ingresá la duración'); return; }
+  var date = f.shiftType==='mensual' ? f.monthValue+'-01' : f.date;
+  state.shifts.push({ id:uid(), establishmentId:est.id, establishmentName:est.name,
+    date:date, shiftType:f.shiftType,
+    startTime:f.startTime, endTime:f.endTime, nextDay:!!f.nextDay,
+    shiftHours:+f.shiftHours, tarifaTipo:f.tarifaTipo, tarifaValor:+f.tarifaValor, notes:f.notes });
+  save('gm_shifts', state.shifts);
+  state.showShiftForm = false;
+  state.form = defaultForm();
+  document.getElementById('btn-new-shift').textContent = '＋ Nueva Guardia';
+  document.getElementById('btn-new-shift').className = 'btn btn-primary';
+  renderShiftForm();
+  renderShifts();
+  renderSummary();
+}
+
+// ══════════════════════════════════════════
+//  RENDER — ESTABLECIMIENTOS
+// ══════════════════════════════════════════
+function toggleEstForm() {
+  state.showEstForm = !state.showEstForm;
+  state.newEst = { name:'', color:COLORS[0] };
+  document.getElementById('btn-new-est').textContent = state.showEstForm ? '✕ Cancelar' : '＋ Nuevo Lugar';
+  document.getElementById('btn-new-est').className = 'btn '+(state.showEstForm?'btn-secondary':'btn-primary');
+  renderEstForm();
+}
+
+function renderEstForm() {
+  var c = document.getElementById('est-form-container');
+  if (!state.showEstForm) { c.innerHTML=''; return; }
+  var ne = state.newEst || {name:'',color:COLORS[0]};
+  var swatches = COLORS.map(function(col){
+    return '<div class="color-swatch'+(ne.color===col?' selected':'')+'" style="background:'+col+'" onclick="setEstColor(\''+col+'\')"></div>';
+  }).join('');
+  c.innerHTML = '<div class="card"><div class="card-body" style="display:flex;flex-direction:column;gap:16px">'+
+    '<div class="form-group"><label class="form-label">Nombre</label>'+
+    '<input class="form-input" type="text" id="est-name-input" placeholder="Ej: Hospital Británico" value="'+escHtml(ne.name)+'" onkeyup="state.newEst.name=this.value" onchange="state.newEst.name=this.value"></div>'+
+    '<div class="form-group"><label class="form-label">Color identificador</label>'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap">'+swatches+'</div></div>'+
+    '<button class="btn btn-primary" onclick="addEstablishment()">Guardar</button>'+
+    '</div></div>';
+}
+
+function setEstColor(col) {
+  state.newEst.color = col;
+  renderEstForm();
+}
+
+function addEstablishment() {
+  var ne = state.newEst || {};
+  var name = (ne.name||'').trim() || (document.getElementById('est-name-input')||{}).value || '';
+  name = name.trim();
+  if (!name) { alert('Ingresá un nombre'); return; }
+  state.establishments.push({ id:uid(), name:name, color:ne.color||COLORS[0] });
+  save('gm_est', state.establishments);
+  state.showEstForm = false;
+  state.newEst = null;
+  document.getElementById('btn-new-est').textContent = '＋ Nuevo Lugar';
+  document.getElementById('btn-new-est').className = 'btn btn-primary';
+  renderEstForm();
+  renderEstList();
+}
+
+function removeEstablishment(id) {
+  if (state.shifts.some(function(s){return s.establishmentId===id;})) {
+    alert('No se puede eliminar: tiene guardias registradas'); return;
+  }
+  if (!confirm('¿Eliminar este establecimiento?')) return;
+  state.establishments = state.establishments.filter(function(e){return e.id!==id;});
+  save('gm_est', state.establishments);
+  renderEstList();
+}
+
+function renderEstList() {
+  var emptyEl = document.getElementById('empty-est');
+  var listEl  = document.getElementById('est-list');
+  if (!state.establishments.length) {
+    emptyEl.style.display='block'; listEl.innerHTML=''; return;
+  }
+  emptyEl.style.display='none';
+  listEl.innerHTML = state.establishments.map(function(e) {
+    var cnt = state.shifts.filter(function(s){return s.establishmentId===e.id;}).length;
+    return '<div class="card" style="margin-bottom:4px">'+
+      '<div class="card-bar" style="background:'+e.color+'"></div>'+
+      '<div class="card-body card-row">'+
+      '<div class="color-dot" style="background:'+e.color+'"></div>'+
+      '<div style="flex:1;min-width:0">'+
+      '<div style="font-weight:600;font-size:.875rem;color:#111">'+e.name+'</div>'+
+      '<div style="font-size:.72rem;color:#9ca3af">'+cnt+' guardia'+(cnt!==1?'s':'')+' registrada'+(cnt!==1?'s':'')+'</div>'+
+      '</div>'+
+      '<div class="shift-actions">'+
+      '<button class="icon-btn" onclick="editEstablishment(\''+e.id+'\')">✏️</button>'+
+      '<button class="icon-btn del" onclick="removeEstablishment(\''+e.id+'\')">×</button>'+
+      '</div>'+
+      '</div></div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  RENDER — RESUMEN
+// ══════════════════════════════════════════
+function renderSummary() {
+  var map = {};
+  state.shifts.filter(function(s){return inMonth(s,state.summaryMonth,state.summaryYear);})
+    .forEach(function(s) {
+      if (!map[s.establishmentId]) map[s.establishmentId]={
+        id:s.establishmentId, name:s.establishmentName, color:getEstColor(s.establishmentId),
+        totalShifts:0, totalHours:0, mensualCount:0, totalValue:0
+      };
+      var e=map[s.establishmentId];
+      e.totalShifts++;
+      if (s.shiftType==='mensual') e.mensualCount++; else e.totalHours+=calcHours(s);
+      e.totalValue+=calcValue(s);
+    });
+  var data = Object.values ? Object.values(map) : Object.keys(map).map(function(k){return map[k];});
+  data.sort(function(a,b){return a.name.localeCompare(b.name);});
+
+  var emptyEl  = document.getElementById('empty-summary');
+  var cardsEl  = document.getElementById('summary-cards');
+  var totalEl  = document.getElementById('summary-total');
+  var exportEl = document.getElementById('export-btn-container');
+  document.getElementById('empty-summary-txt').textContent = 'Sin datos en '+monthLbl(state.summaryMonth,state.summaryYear);
+
+  if (!data.length) {
+    emptyEl.style.display='block'; cardsEl.innerHTML=''; totalEl.innerHTML=''; exportEl.innerHTML=''; return;
+  }
+  emptyEl.style.display='none';
+
+  cardsEl.innerHTML = data.map(function(e) {
+    return '<div class="card" style="margin-bottom:4px">'+
+      '<div class="card-bar" style="background:'+e.color+'"></div>'+
+      '<div class="card-body">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'+
+      '<div><div style="font-weight:700;color:#111">'+e.name+'</div>'+
+      '<div style="font-size:.72rem;color:#9ca3af;margin-top:2px">'+e.totalShifts+' guardia'+(e.totalShifts!==1?'s':'')+'</div></div>'+
+      '<div style="text-align:right">'+
+      (e.totalHours>0?'<div style="font-size:1.2rem;font-weight:700;color:#2563EB">'+fmtHours(e.totalHours)+'</div>':'')+
+      (e.mensualCount>0?'<div style="font-size:.85rem;font-weight:700;color:#8b5cf6">'+e.mensualCount+' mes'+(e.mensualCount>1?'es':'')+'</div>':'')+
+      (e.totalValue>0?'<div style="font-size:.85rem;font-weight:700;color:#b45309">'+fmtCurrency(e.totalValue)+'</div>':'')+
+      '</div></div>'+
+      '</div></div>';
+  }).join('');
+
+  var tot = data.reduce(function(a,e){return{shifts:a.shifts+e.totalShifts,hours:a.hours+e.totalHours,mensual:a.mensual+e.mensualCount,value:a.value+e.totalValue};},{shifts:0,hours:0,mensual:0,value:0});
+  totalEl.innerHTML = '<div class="total-card"><h3>Total del período</h3><div class="total-row">'+
+    '<div class="total-item"><div class="val">'+tot.shifts+'</div><div class="lbl">guardias</div></div>'+
+    '<div class="total-item"><div class="val">'+fmtHours(tot.hours)+'</div><div class="lbl">horas</div></div>'+
+    (tot.mensual>0?'<div class="total-item"><div class="val">'+tot.mensual+'</div><div class="lbl">mensuales</div></div>':'')+
+    (tot.value>0?'<div class="total-item"><div class="val total-val-yellow">'+fmtCurrency(tot.value)+'</div><div class="lbl">liquidado</div></div>':'')+
+    '</div></div>';
+
+  exportEl.innerHTML = '<button class="btn btn-success" onclick="exportToExcel()">📥 Exportar a Excel — '+monthLbl(state.summaryMonth,state.summaryYear)+'</button>';
+}
+
+// ══════════════════════════════════════════
+//  MODAL EDITAR
+// ══════════════════════════════════════════
+function openEditModal(id) {
+  var s = state.shifts.find(function(x){return x.id===id;});
+  if (!s) return;
+  document.getElementById('edit-modal-title').textContent = 'Editar Guardia';
+  state.editingId = id;
+  state.editForm = { establishmentId:s.establishmentId,
+    date:s.date.slice(0,10), monthValue:s.date.slice(0,7), shiftType:s.shiftType,
+    startTime:s.startTime||'08:00', endTime:s.endTime||'20:00', nextDay:!!s.nextDay,
+    shiftHours:+s.shiftHours||12, tarifaTipo:s.tarifaTipo||'guardia', tarifaValor:+s.tarifaValor||0, notes:s.notes||'' };
+  renderEditModal();
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function renderEditModal() {
+  document.getElementById('edit-modal-body').innerHTML = shiftFormHTML(state.editForm, 'edit');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  state.editingId = null;
+  state.editingEstId = null;
+  document.getElementById('edit-modal-body').innerHTML = '';
+}
+
+function handleModalClick(e) {
+  if (e.target === document.getElementById('edit-modal')) closeEditModal();
+}
+
+function editEstablishment(id) {
+  var est = state.establishments.find(function(e){return e.id===id;});
+  if (!est) return;
+  state.editingEstId = id;
+  state.editEstColor = est.color;
+  document.getElementById('edit-modal-title').textContent = 'Editar Lugar';
+  var swatches = COLORS.map(function(col){
+    return '<div class="color-swatch'+(est.color===col?' selected':'')+'" data-color="'+col+'" style="background:'+col+'" onclick="setEditEstColor(\''+col+'\')"></div>';
+  }).join('');
+  document.getElementById('edit-modal-body').innerHTML =
+    '<div class="form-group"><label class="form-label">Nombre</label>'+
+    '<input class="form-input" type="text" id="edit-est-name" value="'+escHtml(est.name)+'"></div>'+
+    '<div class="form-group"><label class="form-label">Color identificador</label>'+
+    '<div id="edit-est-swatches" style="display:flex;gap:10px;flex-wrap:wrap">'+swatches+'</div></div>'+
+    '<button class="btn btn-primary" onclick="saveEstEdit()">Guardar</button>';
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function setEditEstColor(col) {
+  state.editEstColor = col;
+  var items = document.getElementById('edit-est-swatches').querySelectorAll('.color-swatch');
+  for (var i=0; i<items.length; i++) {
+    items[i].className = 'color-swatch'+(items[i].getAttribute('data-color')===col?' selected':'');
+  }
+}
+
+function saveEstEdit() {
+  var nameInput = document.getElementById('edit-est-name');
+  var name = nameInput ? nameInput.value.trim() : '';
+  if (!name) { alert('Ingresá un nombre'); return; }
+  var color = state.editEstColor || COLORS[0];
+  var idx = state.establishments.findIndex(function(e){return e.id===state.editingEstId;});
+  if (idx !== -1) {
+    state.establishments[idx].name = name;
+    state.establishments[idx].color = color;
+    state.shifts.forEach(function(s){
+      if (s.establishmentId === state.editingEstId) s.establishmentName = name;
+    });
+    save('gm_est', state.establishments);
+    save('gm_shifts', state.shifts);
+  }
+  closeEditModal();
+  renderEstList();
+  renderShifts();
+  renderSummary();
+}
+
+function saveEdit() {
+  var f = state.editForm;
+  var est = state.establishments.find(function(e){return e.id===f.establishmentId;});
+  if (!est) { alert('Seleccioná un establecimiento'); return; }
+  if (f.shiftType==='horas' && !f.nextDay) {
+    var sp=f.startTime.split(':'), ep=f.endTime.split(':');
+    if ((+ep[0]*60+(+ep[1])) <= (+sp[0]*60+(+sp[1]))) { alert('La hora de fin debe ser mayor a la de inicio, o marcá "Termina el día siguiente".'); return; }
+  }
+  if (f.shiftType==='completa' && !(+f.shiftHours>0)) { alert('Ingresá la duración'); return; }
+  var date = f.shiftType==='mensual' ? f.monthValue+'-01' : f.date;
+  var idx = state.shifts.findIndex(function(s){return s.id===state.editingId;});
+  if (idx!==-1) {
+    var orig = state.shifts[idx];
+    state.shifts[idx] = { id:orig.id, establishmentId:est.id, establishmentName:est.name,
+      date:date, shiftType:f.shiftType,
+      startTime:f.startTime, endTime:f.endTime, nextDay:!!f.nextDay,
+      shiftHours:+f.shiftHours, tarifaTipo:f.tarifaTipo, tarifaValor:+f.tarifaValor, notes:f.notes };
+  }
+  save('gm_shifts', state.shifts);
+  closeEditModal();
+  renderShifts();
+  renderSummary();
+}
+
+// ══════════════════════════════════════════
+//  EXPORT EXCEL
+// ══════════════════════════════════════════
+function exportToExcel() {
+  if (typeof XLSX === 'undefined') { alert('La función de exportar no está disponible en este dispositivo.'); return; }
+  var monthShifts = state.shifts
+    .filter(function(s){return inMonth(s,state.summaryMonth,state.summaryYear);})
+    .sort(function(a,b){return a.date.localeCompare(b.date);});
+  var h1 = ['Fecha','Establecimiento','Modalidad','Desde','Hasta','Horas','Tarifa','Valor ($)','Notas'];
+  var r1 = monthShifts.map(function(s){
+    return [fmtDate(s.date),s.establishmentName,shiftTypeLbl(s.shiftType),
+      s.shiftType==='horas'?s.startTime:'',
+      s.shiftType==='horas'?s.endTime+(s.nextDay?' (+1día)':''):'',
+      s.shiftType!=='mensual'?Math.round(calcHours(s)*100)/100:'',
+      +s.tarifaValor>0?('$'+s.tarifaValor+' '+(s.tarifaTipo==='hora'?'x hora':'x guardia')):'',
+      calcValue(s)>0?Math.round(calcValue(s)):'',s.notes||''];
+  });
+  var totH = Math.round(monthShifts.filter(function(s){return s.shiftType!=='mensual';}).reduce(function(a,s){return a+calcHours(s);},0)*100)/100;
+  var totV = Math.round(monthShifts.reduce(function(a,s){return a+calcValue(s);},0));
+  r1.push(['','','','','TOTAL',totH,'',totV,'']);
+  var ws1 = XLSX.utils.aoa_to_sheet([h1].concat(r1));
+  ws1['!cols']=[{wch:12},{wch:26},{wch:16},{wch:8},{wch:12},{wch:8},{wch:20},{wch:12},{wch:25}];
+
+  var map={};
+  monthShifts.forEach(function(s){
+    if(!map[s.establishmentId])map[s.establishmentId]={name:s.establishmentName,shifts:0,hours:0,mensual:0,value:0};
+    var e=map[s.establishmentId];e.shifts++;
+    if(s.shiftType==='mensual')e.mensual++;else e.hours+=calcHours(s);
+    e.value+=calcValue(s);
+  });
+  var data=Object.values?Object.values(map):Object.keys(map).map(function(k){return map[k];});
+  var h2=['Establecimiento','Guardias','Horas','Mensuales','Total ($)'];
+  var r2=data.map(function(e){return[e.name,e.shifts,Math.round(e.hours*100)/100,e.mensual,Math.round(e.value)];});
+  var tots=data.reduce(function(a,e){return{shifts:a.shifts+e.shifts,hours:a.hours+e.hours,mensual:a.mensual+e.mensual,value:a.value+e.value};},{shifts:0,hours:0,mensual:0,value:0});
+  r2.push(['TOTAL',tots.shifts,Math.round(tots.hours*100)/100,tots.mensual,Math.round(tots.value)]);
+  var ws2=XLSX.utils.aoa_to_sheet([h2].concat(r2));
+  ws2['!cols']=[{wch:26},{wch:10},{wch:8},{wch:11},{wch:12}];
+
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws1,'Guardias');
+  XLSX.utils.book_append_sheet(wb,ws2,'Resumen');
+  XLSX.writeFile(wb,'Guardias_'+MONTHS[state.summaryMonth-1]+'_'+state.summaryYear+'.xlsx');
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+function init() {
+  renderNav();
+  renderLabels();
+  renderShifts();
+  renderEstList();
+  renderSummary();
+}
+init();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>
