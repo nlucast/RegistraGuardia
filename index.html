@@ -63,6 +63,9 @@
 
     /* Badges */
     .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;white-space:nowrap}
+    .badge-btn{padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;white-space:nowrap;border:none;cursor:pointer;font-family:inherit}
+    .badge-pending{background:#fef3c7;color:#92400e}
+    .badge-paid{background:#d1fae5;color:#065f46}
     .badge-blue{background:#dbeafe;color:#1d4ed8}
     .badge-gray{background:#f3f4f6;color:#6b7280}
     .badge-green{background:#d1fae5;color:#065f46}
@@ -118,6 +121,19 @@
     .help-body ol,.help-body ul{padding-left:18px;display:flex;flex-direction:column;gap:4px}
     .help-inner{background:#f9fafb;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
     .help-inner-title{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af}
+
+    /* Calendar */
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:10px}
+    .cal-header-cell{text-align:center;font-size:.58rem;font-weight:700;color:#9ca3af;padding:4px 0}
+    .cal-day{background:#fff;border-radius:8px;padding:4px 2px;min-height:50px;cursor:default;display:flex;flex-direction:column;align-items:center}
+    .cal-day.has-shifts{cursor:pointer}
+    .cal-day.today{background:#eff6ff}
+    .cal-day.selected{box-shadow:0 0 0 2px #2563EB}
+    .cal-day.empty{background:transparent}
+    .cal-day-num{font-size:.75rem;font-weight:600;color:#374151;line-height:1.4}
+    .cal-day.today .cal-day-num{color:#2563EB;font-weight:800}
+    .cal-dots{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;margin-top:3px}
+    .cal-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 
     /* Empty state */
     .empty{text-align:center;padding:48px 16px;color:#d1d5db}
@@ -189,6 +205,16 @@
       <div id="export-btn-container"></div>
     </section>
 
+    <!-- ═══ CALENDARIO ═══ -->
+    <section id="tab-calendar" class="section">
+      <div class="month-nav">
+        <button onclick="changeMonth('cal',-1)">‹</button>
+        <span id="cal-label"></span>
+        <button onclick="changeMonth('cal',+1)">›</button>
+      </div>
+      <div id="calendar-grid"></div>
+    </section>
+
     <!-- ═══ AYUDA ═══ -->
     <section id="tab-help" class="section">
       <div class="total-card">
@@ -230,9 +256,30 @@
       </div></div>
 
       <div class="help-card"><div class="help-bar" style="background:#3b82f6"></div><div class="help-body">
-        <h3>📱 Instalar en celular</h3>
-        <div class="help-inner"><div class="help-inner-title">Android (Chrome)</div><p>Menú ⋮ → <strong>"Instalar app"</strong> o <strong>"Agregar a pantalla de inicio"</strong></p></div>
-        <div class="help-inner"><div class="help-inner-title">iPhone (Safari)</div><p>Botón compartir ↑ → <strong>"Agregar a inicio"</strong></p></div>
+        <h3>📱 Instalar como app</h3>
+        <p>La app puede instalarse en tu celular como si fuera una aplicación nativa. No ocupa espacio en la galería y abre sin barra del navegador.</p>
+
+        <div class="help-inner">
+          <div class="help-inner-title">Android — Chrome</div>
+          <ol>
+            <li>Tocá el menú <strong>⋮</strong> (tres puntos, arriba a la derecha)</li>
+            <li>Tocá <strong>"Instalar app"</strong> o <strong>"Agregar a pantalla de inicio"</strong></li>
+            <li>Confirmá tocando <strong>"Instalar"</strong></li>
+            <li>El ícono aparece en el home — abrila desde ahí</li>
+          </ol>
+          <div class="alert alert-amber" style="margin-top:8px">⚠️ Usar Chrome, no Firefox. Firefox no soporta instalación de apps.</div>
+        </div>
+
+        <div class="help-inner">
+          <div class="help-inner-title">iPhone — Safari</div>
+          <ol>
+            <li>Tocá el botón <strong>compartir ↑</strong> (centro abajo de la pantalla)</li>
+            <li>Deslizá la lista hacia abajo y tocá <strong>"Agregar a pantalla de inicio"</strong></li>
+            <li>Cambiá el nombre si querés y tocá <strong>"Agregar"</strong></li>
+            <li>El ícono aparece en el home — abrila desde ahí</li>
+          </ol>
+          <div class="alert alert-amber" style="margin-top:8px">⚠️ Usar Safari, no Chrome. Solo Safari permite instalar apps en iPhone.</div>
+        </div>
       </div></div>
     </section>
 
@@ -289,10 +336,11 @@ if (!String.prototype.padStart) {
 var MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 var COLORS = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316'];
 var TABS = [
-  {id:'shifts',       label:'Guardias', icon:'📋'},
-  {id:'establishments',label:'Lugares', icon:'🏥'},
-  {id:'summary',      label:'Resumen',  icon:'📊'},
-  {id:'help',         label:'Ayuda',    icon:'❓'}
+  {id:'establishments',label:'Lugares',   icon:'🏥'},
+  {id:'shifts',        label:'Guardias',  icon:'📋'},
+  {id:'calendar',      label:'Calendario',icon:'📅'},
+  {id:'summary',       label:'Resumen',   icon:'📊'},
+  {id:'help',          label:'Ayuda',     icon:'❓'}
 ];
 
 var now = new Date();
@@ -302,9 +350,11 @@ var state = {
   activeTab: 'shifts',
   filterMonth:  now.getMonth()+1, filterYear:  now.getFullYear(),
   summaryMonth: now.getMonth()+1, summaryYear: now.getFullYear(),
+  calMonth: now.getMonth()+1, calYear: now.getFullYear(), calSelectedDay: null,
   showShiftForm: false,
   showEstForm:   false,
   editingId: null,
+  summaryOpen: {},
   form: defaultForm(),
   editForm: defaultForm()
 };
@@ -389,6 +439,7 @@ function switchTab(id) {
 function renderLabels() {
   document.getElementById('filter-label').textContent = monthLbl(state.filterMonth, state.filterYear);
   document.getElementById('summary-label').textContent = monthLbl(state.summaryMonth, state.summaryYear);
+  document.getElementById('cal-label').textContent = monthLbl(state.calMonth, state.calYear);
 }
 
 function changeMonth(target, dir) {
@@ -396,6 +447,11 @@ function changeMonth(target, dir) {
     state.filterMonth += dir;
     if (state.filterMonth<1) { state.filterMonth=12; state.filterYear--; }
     if (state.filterMonth>12){ state.filterMonth=1;  state.filterYear++; }
+  } else if (target==='cal') {
+    state.calMonth += dir;
+    if (state.calMonth<1) { state.calMonth=12; state.calYear--; }
+    if (state.calMonth>12){ state.calMonth=1;  state.calYear++; }
+    state.calSelectedDay = null;
   } else {
     state.summaryMonth += dir;
     if (state.summaryMonth<1) { state.summaryMonth=12; state.summaryYear--; }
@@ -404,6 +460,7 @@ function changeMonth(target, dir) {
   renderLabels();
   renderShifts();
   renderSummary();
+  renderCalendar();
 }
 
 // ══════════════════════════════════════════
@@ -427,8 +484,9 @@ function renderShiftForm() {
 }
 
 function shiftFormHTML(f, action) {
-  var estOpts = state.establishments.length
-    ? state.establishments.map(function(e){
+  var sortedEsts = state.establishments.slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+  var estOpts = sortedEsts.length
+    ? sortedEsts.map(function(e){
         return '<option value="'+e.id+'"'+(f.establishmentId===e.id?' selected':'')+'>'+e.name+'</option>';
       }).join('')
     : '';
@@ -538,13 +596,15 @@ function renderShifts() {
       : '';
     return '<div class="card" style="margin-bottom:4px">'+
       '<div class="card-bar" style="background:'+color+'"></div>'+
-      '<div class="card-body card-row">'+
+      '<div class="card-body card-row" style="'+(s.paid?'background:#f0fdf4':'')+'">'+
       '<div style="flex:1;min-width:0">'+
       '<div style="font-weight:700;font-size:.875rem;color:#111;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.establishmentName+'</div>'+
       '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">'+
       '<span class="badge badge-gray">'+shiftTypeLbl(s.shiftType)+'</span>'+
       '<span class="badge badge-green">'+shiftSummary(s)+'</span>'+
       (v>0?'<span class="badge badge-yellow">'+fmtCurrency(v)+'</span>':'')+
+      '<button class="badge-btn '+(s.paid?'badge-paid':'badge-pending')+'" onclick="togglePaid(\''+s.id+'\')">'+
+      (s.paid?'✓ Cobrada':'⏳ Pendiente')+'</button>'+
       '</div>'+
       '<div style="font-size:.72rem;color:#9ca3af">'+fmtDate(s.date)+timeInfo+'</div>'+
       (s.notes?'<div style="font-size:.72rem;color:#9ca3af;margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.notes+'</div>':'')+
@@ -560,19 +620,34 @@ function renderShifts() {
   var mensual = filtered.filter(function(s){return s.shiftType==='mensual';}).length;
   var value   = filtered.reduce(function(a,s){return a+calcValue(s);},0);
   var items = '';
+  var pending = filtered.filter(function(s){return !s.paid;}).length;
   if (hours>0) items += '<div class="total-item"><div class="val">'+fmtHours(hours)+'</div><div class="lbl">horas</div></div>';
   if (mensual>0) items += '<div class="total-item"><div class="val">'+mensual+'</div><div class="lbl">mensual'+(mensual>1?'es':'')+'</div></div>';
   if (value>0) items += '<div class="total-item"><div class="val total-val-yellow">'+fmtCurrency(value)+'</div><div class="lbl">liquidado</div></div>';
   items += '<div class="total-item ml"><div class="val">'+filtered.length+'</div><div class="lbl">guardia'+(filtered.length!==1?'s':'')+'</div></div>';
+  if (pending>0) items += '<div class="total-item ml"><div class="val" style="color:#fde68a">'+pending+'</div><div class="lbl">pendiente'+(pending!==1?'s':'')+'</div></div>';
   totalEl.innerHTML = '<div class="total-card"><h3>Total del mes</h3><div class="total-row">'+items+'</div></div>';
+}
+
+function togglePaid(id) {
+  var idx = state.shifts.findIndex(function(s){return s.id===id;});
+  if (idx !== -1) {
+    state.shifts[idx].paid = !state.shifts[idx].paid;
+    save('gm_shifts', state.shifts);
+    renderShifts();
+    renderSummary();
+    renderCalendar();
+  }
 }
 
 function removeShift(id) {
   if (!confirm('¿Eliminar esta guardia?')) return;
   state.shifts = state.shifts.filter(function(s){return s.id!==id;});
   save('gm_shifts', state.shifts);
+  state.calSelectedDay = null;
   renderShifts();
   renderSummary();
+  renderCalendar();
 }
 
 function addShift() {
@@ -588,7 +663,7 @@ function addShift() {
   if (f.shiftType==='completa' && !(+f.shiftHours>0)) { alert('Ingresá la duración'); return; }
   var date = f.shiftType==='mensual' ? f.monthValue+'-01' : f.date;
   state.shifts.push({ id:uid(), establishmentId:est.id, establishmentName:est.name,
-    date:date, shiftType:f.shiftType,
+    date:date, paid:false, shiftType:f.shiftType,
     startTime:f.startTime, endTime:f.endTime, nextDay:!!f.nextDay,
     shiftHours:+f.shiftHours, tarifaTipo:f.tarifaTipo, tarifaValor:+f.tarifaValor, notes:f.notes });
   save('gm_shifts', state.shifts);
@@ -599,6 +674,7 @@ function addShift() {
   renderShiftForm();
   renderShifts();
   renderSummary();
+  renderCalendar();
 }
 
 // ══════════════════════════════════════════
@@ -665,7 +741,8 @@ function renderEstList() {
     emptyEl.style.display='block'; listEl.innerHTML=''; return;
   }
   emptyEl.style.display='none';
-  listEl.innerHTML = state.establishments.map(function(e) {
+  var sortedEsts = state.establishments.slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+  listEl.innerHTML = sortedEsts.map(function(e) {
     var cnt = state.shifts.filter(function(s){return s.establishmentId===e.id;}).length;
     return '<div class="card" style="margin-bottom:4px">'+
       '<div class="card-bar" style="background:'+e.color+'"></div>'+
@@ -686,18 +763,24 @@ function renderEstList() {
 // ══════════════════════════════════════════
 //  RENDER — RESUMEN
 // ══════════════════════════════════════════
+function toggleSummaryCard(id) {
+  state.summaryOpen[id] = !state.summaryOpen[id];
+  renderSummary();
+}
+
 function renderSummary() {
+  var monthShiftsAll = state.shifts.filter(function(s){return inMonth(s,state.summaryMonth,state.summaryYear);});
   var map = {};
-  state.shifts.filter(function(s){return inMonth(s,state.summaryMonth,state.summaryYear);})
-    .forEach(function(s) {
+  monthShiftsAll.forEach(function(s) {
       if (!map[s.establishmentId]) map[s.establishmentId]={
         id:s.establishmentId, name:s.establishmentName, color:getEstColor(s.establishmentId),
-        totalShifts:0, totalHours:0, mensualCount:0, totalValue:0
+        totalShifts:0, totalHours:0, mensualCount:0, totalValue:0, shifts:[]
       };
       var e=map[s.establishmentId];
       e.totalShifts++;
       if (s.shiftType==='mensual') e.mensualCount++; else e.totalHours+=calcHours(s);
       e.totalValue+=calcValue(s);
+      e.shifts.push(s);
     });
   var data = Object.values ? Object.values(map) : Object.keys(map).map(function(k){return map[k];});
   data.sort(function(a,b){return a.name.localeCompare(b.name);});
@@ -714,17 +797,45 @@ function renderSummary() {
   emptyEl.style.display='none';
 
   cardsEl.innerHTML = data.map(function(e) {
+    var open = !!state.summaryOpen[e.id];
+    var pending = e.shifts.filter(function(s){return !s.paid;}).length;
+    var detail = '';
+    if (open) {
+      var sorted = e.shifts.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+      detail = '<div style="border-top:1px solid #f3f4f6;margin-top:8px;padding-top:8px;display:flex;flex-direction:column;gap:6px">'+
+        sorted.map(function(s){
+          var v = calcValue(s);
+          return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:10px;background:'+(s.paid?'#f0fdf4':'#fffbeb')+'">'+
+            '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:.8rem;font-weight:600;color:#111">'+fmtDate(s.date)+'</div>'+
+            '<div style="font-size:.7rem;color:#9ca3af">'+shiftSummary(s)+
+            (v>0?' · '+fmtCurrency(v):'')+
+            (s.notes?' · <i>'+s.notes+'</i>':'')+
+            '</div></div>'+
+            '<button class="badge-btn '+(s.paid?'badge-paid':'badge-pending')+'" onclick="togglePaid(\''+s.id+'\')">'+
+            (s.paid?'✓ Cobrada':'⏳ Pendiente')+'</button>'+
+            '</div>';
+        }).join('')+
+        '</div>';
+    }
     return '<div class="card" style="margin-bottom:4px">'+
       '<div class="card-bar" style="background:'+e.color+'"></div>'+
       '<div class="card-body">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;cursor:pointer" onclick="toggleSummaryCard(\''+e.id+'\')">'+
       '<div><div style="font-weight:700;color:#111">'+e.name+'</div>'+
-      '<div style="font-size:.72rem;color:#9ca3af;margin-top:2px">'+e.totalShifts+' guardia'+(e.totalShifts!==1?'s':'')+'</div></div>'+
+      '<div style="font-size:.72rem;color:#9ca3af;margin-top:2px">'+
+        e.totalShifts+' guardia'+(e.totalShifts!==1?'s':'')+
+        (pending>0?' · <span style="color:#d97706">'+pending+' pendiente'+(pending!==1?'s':'')+'</span>':'')+
+      '</div></div>'+
+      '<div style="display:flex;align-items:center;gap:8px">'+
       '<div style="text-align:right">'+
-      (e.totalHours>0?'<div style="font-size:1.2rem;font-weight:700;color:#2563EB">'+fmtHours(e.totalHours)+'</div>':'')+
+      (e.totalHours>0?'<div style="font-size:1.1rem;font-weight:700;color:#2563EB">'+fmtHours(e.totalHours)+'</div>':'')+
       (e.mensualCount>0?'<div style="font-size:.85rem;font-weight:700;color:#8b5cf6">'+e.mensualCount+' mes'+(e.mensualCount>1?'es':'')+'</div>':'')+
       (e.totalValue>0?'<div style="font-size:.85rem;font-weight:700;color:#b45309">'+fmtCurrency(e.totalValue)+'</div>':'')+
+      '</div>'+
+      '<span style="font-size:1rem;color:#9ca3af;user-select:none">'+(open?'▾':'▸')+'</span>'+
       '</div></div>'+
+      detail+
       '</div></div>';
   }).join('');
 
@@ -831,7 +942,7 @@ function saveEdit() {
   if (idx!==-1) {
     var orig = state.shifts[idx];
     state.shifts[idx] = { id:orig.id, establishmentId:est.id, establishmentName:est.name,
-      date:date, shiftType:f.shiftType,
+      date:date, paid:!!orig.paid, shiftType:f.shiftType,
       startTime:f.startTime, endTime:f.endTime, nextDay:!!f.nextDay,
       shiftHours:+f.shiftHours, tarifaTipo:f.tarifaTipo, tarifaValor:+f.tarifaValor, notes:f.notes };
   }
@@ -839,6 +950,7 @@ function saveEdit() {
   closeEditModal();
   renderShifts();
   renderSummary();
+  renderCalendar();
 }
 
 // ══════════════════════════════════════════
@@ -849,20 +961,21 @@ function exportToExcel() {
   var monthShifts = state.shifts
     .filter(function(s){return inMonth(s,state.summaryMonth,state.summaryYear);})
     .sort(function(a,b){return a.date.localeCompare(b.date);});
-  var h1 = ['Fecha','Establecimiento','Modalidad','Desde','Hasta','Horas','Tarifa','Valor ($)','Notas'];
+  var h1 = ['Fecha','Establecimiento','Modalidad','Desde','Hasta','Horas','Tarifa','Valor ($)','Estado','Notas'];
   var r1 = monthShifts.map(function(s){
     return [fmtDate(s.date),s.establishmentName,shiftTypeLbl(s.shiftType),
       s.shiftType==='horas'?s.startTime:'',
       s.shiftType==='horas'?s.endTime+(s.nextDay?' (+1día)':''):'',
       s.shiftType!=='mensual'?Math.round(calcHours(s)*100)/100:'',
       +s.tarifaValor>0?('$'+s.tarifaValor+' '+(s.tarifaTipo==='hora'?'x hora':'x guardia')):'',
-      calcValue(s)>0?Math.round(calcValue(s)):'',s.notes||''];
+      calcValue(s)>0?Math.round(calcValue(s)):'',
+      s.paid?'Cobrada':'Pendiente',s.notes||''];
   });
   var totH = Math.round(monthShifts.filter(function(s){return s.shiftType!=='mensual';}).reduce(function(a,s){return a+calcHours(s);},0)*100)/100;
   var totV = Math.round(monthShifts.reduce(function(a,s){return a+calcValue(s);},0));
-  r1.push(['','','','','TOTAL',totH,'',totV,'']);
+  r1.push(['','','','','TOTAL',totH,'',totV,'','']);
   var ws1 = XLSX.utils.aoa_to_sheet([h1].concat(r1));
-  ws1['!cols']=[{wch:12},{wch:26},{wch:16},{wch:8},{wch:12},{wch:8},{wch:20},{wch:12},{wch:25}];
+  ws1['!cols']=[{wch:12},{wch:26},{wch:16},{wch:8},{wch:12},{wch:8},{wch:20},{wch:12},{wch:12},{wch:25}];
 
   var map={};
   monthShifts.forEach(function(s){
@@ -888,12 +1001,75 @@ function exportToExcel() {
 // ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+//  RENDER — CALENDARIO
+// ══════════════════════════════════════════
+function renderCalendar() {
+  var m = state.calMonth, y = state.calYear;
+  document.getElementById('cal-label').textContent = monthLbl(m, y);
+  var firstDay = (new Date(y, m-1, 1).getDay() + 6) % 7; // 0=Lun
+  var daysInMonth = new Date(y, m, 0).getDate();
+  var todayStr = new Date().toISOString().slice(0,10);
+  var shiftMap = {};
+  state.shifts.filter(function(s){ return inMonth(s,m,y); }).forEach(function(s){
+    if (!shiftMap[s.date]) shiftMap[s.date] = [];
+    shiftMap[s.date].push(s);
+  });
+  var DAY_NAMES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  var html = '<div class="cal-grid">';
+  DAY_NAMES.forEach(function(d){ html += '<div class="cal-header-cell">'+d+'</div>'; });
+  for (var i=0; i<firstDay; i++) html += '<div class="cal-day empty"></div>';
+  for (var d=1; d<=daysInMonth; d++) {
+    var ds = y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var shifts = shiftMap[ds] || [];
+    var cls = 'cal-day'+(shifts.length?' has-shifts':'')+(ds===todayStr?' today':'')+(ds===state.calSelectedDay?' selected':'');
+    var dots = shifts.length ? '<div class="cal-dots">'+
+      shifts.map(function(s){ return '<div class="cal-dot" style="background:'+getEstColor(s.establishmentId)+'"></div>'; }).join('')+
+      '</div>' : '';
+    html += '<div class="'+cls+'"'+(shifts.length?' onclick="selectCalDay(\''+ds+'\')"':'')+'>'+
+      '<div class="cal-day-num">'+d+'</div>'+dots+'</div>';
+  }
+  html += '</div>';
+  if (state.calSelectedDay && shiftMap[state.calSelectedDay]) {
+    html += shiftMap[state.calSelectedDay].map(function(s){
+      var v = calcValue(s), color = getEstColor(s.establishmentId);
+      var timeInfo = s.shiftType==='horas' ? ' · '+s.startTime+'–'+s.endTime+(s.nextDay?' +1d':'') : '';
+      return '<div class="card" style="margin-bottom:4px">'+
+        '<div class="card-bar" style="background:'+color+'"></div>'+
+        '<div class="card-body card-row" style="'+(s.paid?'background:#f0fdf4':'')+'">'+
+        '<div style="flex:1;min-width:0">'+
+        '<div style="font-weight:700;font-size:.875rem;color:#111">'+s.establishmentName+'</div>'+
+        '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'+
+        '<span class="badge badge-gray">'+shiftTypeLbl(s.shiftType)+'</span>'+
+        '<span class="badge badge-green">'+shiftSummary(s)+'</span>'+
+        (v>0?'<span class="badge badge-yellow">'+fmtCurrency(v)+'</span>':'')+
+        '<button class="badge-btn '+(s.paid?'badge-paid':'badge-pending')+'" onclick="togglePaid(\''+s.id+'\')">'+
+        (s.paid?'✓ Cobrada':'⏳ Pendiente')+'</button>'+
+        '</div>'+
+        '<div style="font-size:.72rem;color:#9ca3af;margin-top:2px">'+shiftSummary(s)+timeInfo+'</div>'+
+        (s.notes?'<div style="font-size:.72rem;color:#9ca3af;font-style:italic">'+s.notes+'</div>':'')+
+        '</div>'+
+        '<div class="shift-actions">'+
+        '<button class="icon-btn" onclick="openEditModal(\''+s.id+'\')">✏️</button>'+
+        '<button class="icon-btn del" onclick="removeShift(\''+s.id+'\')">×</button>'+
+        '</div></div></div>';
+    }).join('');
+  }
+  document.getElementById('calendar-grid').innerHTML = html;
+}
+
+function selectCalDay(ds) {
+  state.calSelectedDay = state.calSelectedDay === ds ? null : ds;
+  renderCalendar();
+}
+
 function init() {
   renderNav();
   renderLabels();
   renderShifts();
   renderEstList();
   renderSummary();
+  renderCalendar();
 }
 init();
 
